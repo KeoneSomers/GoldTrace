@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>GoldTrace gallery</title>
+<style>
+  :root {
+    --bg: #0d0f14; --bg2: #171b24; --line: #2b3140; --text: #e9e6dc; --muted: #9aa0ad;
+    --gold: #ffd100; --gold2: #c8962a;
+    --clean: #40cc4d; --untracked: #8c8c8c; --unknown: #ffbf1a; --flagged: #e63333;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--text);
+    font-family: "Segoe UI", system-ui, sans-serif; }
+  section { display: none; width: 100vw; height: 100vh; padding: 56px 64px; position: relative;
+    background:
+      radial-gradient(900px 500px at 85% -10%, rgba(255, 209, 0, .13), transparent 60%),
+      radial-gradient(700px 500px at -10% 110%, rgba(64, 204, 77, .08), transparent 60%),
+      linear-gradient(160deg, #10131a, #0a0c10); }
+  section.on { display: flex; }
+  section:not(.on) { display: none !important; }
+  section.col { justify-content: center; padding-bottom: 96px; }
+  #trade .panel { width: 362px; font-size: 16px; }
+  #trade .panel .s { font-size: 24px; }
+  #trade .cap { font-size: 16px; width: 362px; color: var(--muted); }
+  h1, h2 { font-family: Georgia, "Palatino Linotype", serif; font-weight: 700; letter-spacing: .2px; }
+  h1 { font-size: 76px; line-height: 1; }
+  h1 b, h2 b, .brand b { color: var(--gold); font-weight: inherit; }
+  h2 { font-size: 44px; line-height: 1.12; }
+  .lede { font-size: 24px; line-height: 1.45; color: #cfccc2; max-width: 560px; }
+  .muted { color: var(--muted); }
+  .brand { position: absolute; left: 64px; bottom: 34px; display: flex; align-items: center; gap: 10px;
+    font-family: Georgia, serif; font-size: 20px; font-weight: 700; }
+  .brand svg { width: 28px; height: 28px; }
+  .note { position: absolute; right: 64px; bottom: 38px; font-size: 13px; color: #6f7684; }
+  .col { display: flex; flex-direction: column; }
+  .chips { display: flex; gap: 10px; flex-wrap: wrap; }
+  .chip { font-size: 15px; padding: 7px 13px; border: 1px solid var(--line); border-radius: 999px;
+    background: rgba(255, 255, 255, .03); color: #d6d3c9; }
+
+  /* In-game style panel */
+  .panel { width: 300px; background: rgba(12, 12, 14, .94); border: 1px solid #77705c; border-radius: 7px;
+    padding: 14px 15px 15px; font-size: 14px; line-height: 1.38;
+    box-shadow: 0 0 0 1px #000, 0 18px 50px rgba(0, 0, 0, .55); }
+  .panel .t { color: var(--gold); font-weight: 600; }
+  .panel .t span { color: #fff; font-weight: 400; margin-left: 8px; }
+  .panel .s { font-size: 21px; margin: 7px 0 8px; color: #fff; }
+  .panel .s b { font-weight: 700; margin-right: 6px; }
+  .bar { display: flex; height: 11px; background: rgba(0, 0, 0, .6); margin-bottom: 9px; }
+  .bar i { display: block; height: 100%; }
+  .c-clean { background: var(--clean); } .c-untracked { background: var(--untracked); }
+  .c-unknown { background: var(--unknown); } .c-flagged { background: var(--flagged); }
+  .green { color: #40d050; } .amber { color: #ffc020; } .red { color: #ff4040; } .grey { color: #aaa; }
+  .panel p + p { margin-top: 7px; }
+  .big.panel { width: 400px; font-size: 18.5px; padding: 19px 20px 20px; }
+  .big.panel .s { font-size: 28px; }
+  .big.panel .bar { height: 14px; }
+
+  /* Legend */
+  .legend { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .lg { display: flex; gap: 14px; align-items: flex-start; padding: 18px 20px; border: 1px solid var(--line);
+    border-radius: 10px; background: rgba(255, 255, 255, .025); }
+  .lg i { flex: none; width: 16px; height: 16px; border-radius: 4px; margin-top: 5px; }
+  .lg h3 { font-size: 20px; font-weight: 600; margin-bottom: 3px; }
+  .lg p { font-size: 15.5px; color: var(--muted); line-height: 1.4; }
+
+  /* Flow */
+  .flow { display: flex; align-items: stretch; gap: 0; width: 100%; }
+  .node { flex: 1; border: 1px solid var(--line); border-radius: 12px; background: var(--bg2); padding: 22px; }
+  .node h3 { font-size: 22px; font-weight: 600; }
+  .node .who { font-size: 14px; color: var(--muted); margin: 2px 0 16px; }
+  .node .bar { height: 16px; border-radius: 3px; overflow: hidden; margin-bottom: 10px; }
+  .node p { font-size: 15.5px; line-height: 1.4; color: #cfccc2; }
+  .arrow { flex: none; width: 150px; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 6px; color: var(--muted); font-size: 14px; text-align: center; }
+  .arrow svg { width: 90px; height: 22px; }
+  .arrow b { color: var(--text); font-weight: 600; font-size: 16px; }
+
+  /* Ledger window */
+  .win { width: 560px; background: rgba(14, 14, 17, .96); border: 1px solid #77705c; border-radius: 8px;
+    box-shadow: 0 0 0 1px #000, 0 22px 60px rgba(0, 0, 0, .6); overflow: hidden; font-size: 15px; line-height: 1.5; }
+  .win .tb { background: linear-gradient(#3a2f18, #241d0f); border-bottom: 1px solid #77705c; padding: 7px 14px;
+    color: var(--gold); font-weight: 600; text-align: center; position: relative; }
+  .win .tb::after { content: "×"; position: absolute; right: 12px; top: 3px; color: #d8c58a; font-size: 20px; }
+  .win .in { padding: 16px 18px 18px; }
+  .win .bar { height: 14px; margin-bottom: 12px; }
+  .win h4 { color: var(--gold); font-weight: 600; font-size: 15px; margin-top: 12px; }
+  .win .row { display: flex; gap: 10px; }
+  .win .row .d { color: #aaa; width: 92px; flex: none; }
+  .win .row .a { width: 86px; flex: none; }
+
+  /* Logo */
+  #logo { align-items: center; justify-content: center; padding: 0;
+    background: radial-gradient(circle at 50% 35%, #1d2230, #0a0c10 75%); }
+  #logo svg { width: 78%; height: 78%; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="coin" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffe680"/><stop offset=".55" stop-color="#ffd100"/><stop offset="1" stop-color="#b9831a"/>
+    </linearGradient>
+    <symbol id="mark" viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="46" fill="url(#coin)"/>
+      <circle cx="50" cy="50" r="38" fill="none" stroke="#7a5510" stroke-width="2.5" opacity=".55"/>
+      <polyline points="24,62 41,45 57,58 76,34" fill="none" stroke="#1a1408" stroke-width="6.5"
+        stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="24" cy="62" r="7" fill="#1a1408"/><circle cx="41" cy="45" r="7" fill="#1a1408"/>
+      <circle cx="57" cy="58" r="7" fill="#1a1408"/><circle cx="76" cy="34" r="7" fill="#1a1408"/>
+      <circle cx="76" cy="34" r="3.2" fill="#40cc4d"/>
+    </symbol>
+  </defs>
+</svg>
+
+<!-- 1. Hero -->
+<section id="hero" style="align-items:center; gap:70px">
+  <div class="col" style="gap:26px; flex:1">
+    <svg style="width:92px;height:92px"><use href="#mark"/></svg>
+    <h1>Gold<b>Trace</b></h1>
+    <p class="lede">See where another player's gold came from before you accept the trade.</p>
+    <div class="chips">
+      <span class="chip">Trust score in the trade window</span>
+      <span class="chip">Tracks every gold source</span>
+      <span class="chip">Follows gold across alts</span>
+    </div>
+  </div>
+  <div class="big panel">
+    <p class="t">GoldTrace <span>Thalvyn-Stormreach</span></p>
+    <p class="s"><b class="amber">58</b> Medium confidence</p>
+    <div class="bar"><i class="c-clean" style="width:47%"></i><i class="c-untracked" style="width:11%"></i><i class="c-unknown" style="width:38%"></i><i class="c-flagged" style="width:4%"></i></div>
+    <p class="red">4% of this player's gold is flagged (large one-sided transfers from strangers or overpriced auctions).</p>
+    <p class="amber">38% of this player's gold came from characters without GoldTrace. Its origin is unknown; accept with caution.</p>
+    <p style="margin-top:12px">They are offering 250g 0s.</p>
+    <p class="red">About 10g 0s of it is flagged.</p>
+    <p class="amber">About 95g 0s of it is of unknown origin.</p>
+  </div>
+  <div class="note">Illustration of the in-game panel</div>
+</section>
+
+<!-- 2. Trade panel states -->
+<section id="trade" class="col" style="gap:34px">
+  <div class="col" style="gap:10px">
+    <h2>A score the moment the <b>trade window</b> opens</h2>
+    <p class="lede" style="max-width:900px; font-size:21px">GoldTrace asks the other player's addon for their gold history and shows the result beside the trade.</p>
+  </div>
+  <div style="display:flex; gap:28px; align-items:flex-start">
+    <div class="col" style="gap:12px">
+      <div class="panel">
+        <p class="t">GoldTrace <span>Merrowyn-Stormreach</span></p>
+        <p class="s"><b class="green">96</b> High confidence</p>
+        <div class="bar"><i class="c-clean" style="width:93%"></i><i class="c-untracked" style="width:5%"></i><i class="c-unknown" style="width:2%"></i></div>
+        <p class="green">No concerns found.</p>
+        <p style="margin-top:10px">They are offering 120g 0s.</p>
+      </div>
+      <p class="cap">Gold earned from quests, loot, vendors and normal auctions.</p>
+    </div>
+    <div class="col" style="gap:12px">
+      <div class="panel">
+        <p class="t">GoldTrace <span>Thalvyn-Stormreach</span></p>
+        <p class="s"><b class="amber">58</b> Medium confidence</p>
+        <div class="bar"><i class="c-clean" style="width:47%"></i><i class="c-untracked" style="width:11%"></i><i class="c-unknown" style="width:38%"></i><i class="c-flagged" style="width:4%"></i></div>
+        <p class="red">4% of this player's gold is flagged (large one-sided transfers from strangers or overpriced auctions).</p>
+        <p class="amber">38% of this player's gold came from characters without GoldTrace. Its origin is unknown; accept with caution.</p>
+        <p style="margin-top:10px">They are offering 250g 0s.</p>
+        <p class="red">About 10g 0s of it is flagged.</p>
+        <p class="amber">About 95g 0s of it is of unknown origin.</p>
+      </div>
+      <p class="cap">A warning when part of their gold can't be traced.</p>
+    </div>
+    <div class="col" style="gap:12px">
+      <div class="panel">
+        <p class="t">GoldTrace <span>Brakkus-Stormreach</span></p>
+        <p class="s"><b class="amber" style="font-weight:400">No data</b></p>
+        <div class="bar"></div>
+        <p class="amber">This player isn't running GoldTrace. The origin of their gold is unknown; accept with caution.</p>
+        <p style="margin-top:10px">They are offering 500g 0s.</p>
+        <p class="amber">It will be recorded as unknown origin on your character.</p>
+      </div>
+      <p class="cap">Players without the addon are shown plainly as unknown.</p>
+    </div>
+  </div>
+  <div class="brand"><svg><use href="#mark"/></svg><span>Gold<b>Trace</b></span></div>
+  <div class="note">Illustration of the in-game panel</div>
+</section>
+
+<!-- 3. Buckets -->
+<section id="buckets" class="col" style="gap:30px">
+  <div class="col" style="gap:10px">
+    <h2>Every coin is sorted by <b>where it came from</b></h2>
+    <p class="lede" style="max-width:900px; font-size:21px">GoldTrace records each change to your gold and files it under one of four labels.</p>
+  </div>
+  <div class="bar" style="height:26px; border-radius:6px; overflow:hidden; margin:0">
+    <i class="c-clean" style="width:56%"></i><i class="c-untracked" style="width:14%"></i><i class="c-unknown" style="width:22%"></i><i class="c-flagged" style="width:8%"></i>
+  </div>
+  <div class="legend">
+    <div class="lg"><i class="c-clean"></i><div><h3>Clean</h3><p>Earned from the game: quests, loot, vendor sales and normally priced auctions.</p></div></div>
+    <div class="lg"><i class="c-untracked"></i><div><h3>Untracked</h3><p>Held before you installed the addon, or gained while it was switched off.</p></div></div>
+    <div class="lg"><i class="c-unknown"></i><div><h3>Unknown origin</h3><p>Received from a character that doesn't run GoldTrace, so its history can't be seen.</p></div></div>
+    <div class="lg"><i class="c-flagged"></i><div><h3>Flagged</h3><p>Large one-sided gifts from strangers, or auction sales far above a sensible price.</p></div></div>
+  </div>
+  <div class="brand"><svg><use href="#mark"/></svg><span>Gold<b>Trace</b></span></div>
+</section>
+
+<!-- 4. Alts -->
+<section id="alts" class="col" style="gap:34px">
+  <div class="col" style="gap:10px">
+    <h2>Gold keeps its history, <b>even through alts</b></h2>
+    <p class="lede" style="max-width:940px; font-size:21px">Passing gold through another character doesn't clean it. The labels travel with the coins.</p>
+  </div>
+  <div class="flow">
+    <div class="node">
+      <h3>Stranger</h3><p class="who">No addon installed</p>
+      <div class="bar"><i class="c-flagged" style="width:100%"></i></div>
+      <p>Hands over 400g and takes nothing in return.</p>
+    </div>
+    <div class="arrow"><b>400g</b><svg viewBox="0 0 90 22"><path d="M2 11h78M70 3l10 8-10 8" fill="none" stroke="#9aa0ad" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>one-sided trade</div>
+    <div class="node">
+      <h3>Your alt</h3><p class="who">Had 600g of clean gold</p>
+      <div class="bar"><i class="c-clean" style="width:60%"></i><i class="c-flagged" style="width:40%"></i></div>
+      <p>Now holds 1,000g: 60% clean, 40% flagged.</p>
+    </div>
+    <div class="arrow"><b>500g</b><svg viewBox="0 0 90 22"><path d="M2 11h78M70 3l10 8-10 8" fill="none" stroke="#9aa0ad" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>mailed to main</div>
+    <div class="node">
+      <h3>Your main</h3><p class="who">Receives the same mix</p>
+      <div class="bar"><i class="c-clean" style="width:60%"></i><i class="c-flagged" style="width:40%"></i></div>
+      <p>300g arrives clean and 200g arrives flagged.</p>
+    </div>
+  </div>
+  <div class="brand"><svg><use href="#mark"/></svg><span>Gold<b>Trace</b></span></div>
+</section>
+
+<!-- 5. Ledger -->
+<section id="ledger" style="align-items:center; gap:64px">
+  <div class="col" style="gap:22px; flex:1">
+    <h2>Your own <b>ledger</b>, one command away</h2>
+    <p class="lede" style="font-size:21px">Type <span style="color:var(--gold)">/goldtrace</span> to see your score, what your gold is made of, your other characters and recent activity.</p>
+    <div class="chips">
+      <span class="chip">Sealed against hand edits</span>
+      <span class="chip">Shared peer to peer, no extra app</span>
+    </div>
+  </div>
+  <div class="win">
+    <div class="tb">GoldTrace</div>
+    <div class="in">
+      <div class="bar"><i class="c-clean" style="width:81%"></i><i class="c-untracked" style="width:12%"></i><i class="c-unknown" style="width:7%"></i></div>
+      <p><span style="color:var(--gold)">Aelindra-Stormreach</span> &nbsp; Score <b class="green">89</b> &nbsp; High confidence &nbsp; 7 confirmed trade(s)</p>
+      <p style="margin-top:8px"><span style="color:var(--clean)">Clean</span> &nbsp;412g 30s &nbsp;(81%)</p>
+      <p><span style="color:var(--untracked)">Untracked</span> &nbsp;61g 4s &nbsp;(12%)</p>
+      <p><span style="color:var(--unknown)">Unknown origin</span> &nbsp;35g 60s &nbsp;(7%)</p>
+      <p><span style="color:var(--flagged)">Flagged</span> &nbsp;0c &nbsp;(0%)</p>
+      <h4>Income since install</h4>
+      <p>Quests 148g 12s &nbsp;|&nbsp; Loot 96g 40s &nbsp;|&nbsp; Vendors 71g 3s &nbsp;|&nbsp; Auctions 164g 0s &nbsp;|&nbsp; Trades 35g 60s</p>
+      <h4>Your other characters</h4>
+      <p>Bramholt-Stormreach &nbsp;<span class="green">94</span>&nbsp; 208g 15s</p>
+      <h4>Recent</h4>
+      <div class="row"><span class="d">10/03 21:14</span><span class="a green">+12g 0s</span><span>Auctions &nbsp;Runecloth Bolt <span class="grey">(clean)</span></span></div>
+      <div class="row"><span class="d">10/03 20:52</span><span class="a green">+35g 60s</span><span>Trades &nbsp;Korvash-Stormreach <span class="grey">(unknown origin)</span></span></div>
+      <div class="row"><span class="d">10/03 20:31</span><span class="a" style="color:#ff6060">-4g 25s</span><span>Vendors</span></div>
+      <div class="row"><span class="d">10/03 20:07</span><span class="a green">+1g 85s</span><span>Quests <span class="grey">(clean)</span></span></div>
+    </div>
+  </div>
+  <div class="note">Illustration of the in-game window</div>
+</section>
+
+<!-- Logo -->
+<section id="logo"><svg><use href="#mark"/></svg></section>
+
+<script>
+  var id = (location.hash || "#hero").slice(1);
+  var el = document.getElementById(id);
+  if (el) el.classList.add("on");
+</script>
+</body>
+</html>

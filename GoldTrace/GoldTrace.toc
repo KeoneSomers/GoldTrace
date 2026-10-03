@@ -1,0 +1,16 @@
+## Interface: 16001
+## Title: GoldTrace
+## Notes: Tracks where your gold came from and shows a trust score for the other player when you trade.
+## Version: 0.1.0
+## SavedVariables: GoldTraceDB
+## IconTexture: Interface\Icons\INV_Misc_Coin_01
+
+Seal.lua
+Ledger.lua
+Score.lua
+Tests.lua
+Core.lua
+Sources.lua
+Comms.lua
+UI\TradePanel.lua
+UI\LedgerFrame.lua
